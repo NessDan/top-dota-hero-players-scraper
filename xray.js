@@ -25,9 +25,9 @@ function getAllHeroes() {
 }
 
 function getTopPlayers(heroUrls) {
-	for (var i = 0; i < heroUrls.length; i++) {
-		var heroUrl = heroUrls[i];
+	var i = 0;
 
+	function getTopPlayer(heroUrl) {
 		var query = {
 			"url": heroUrl + "/players",
 			"scope": "table.sortable",
@@ -37,15 +37,20 @@ function getTopPlayers(heroUrls) {
 		x(query.url, query.scope, query.selector)(function(err, response) {
 			response.splice(0, 1); // (remove useless value picked up.)
 			getPlayerMatches(response);
-			// console.log('second', response);
+			i++;
+			if (heroUrls[i]) {
+				getTopPlayer(heroUrls[i]);
+			}
 		});
 	}
+
+	getTopPlayer(heroUrls[i]);
 }
 
 function getPlayerMatches(playersMatches) {
-	for (var i = 0; i < playersPerHero; i++) {
-		playerMatches = playersMatches[i];
+	var i = 0;
 
+	function getPlayerMatch(playerMatches) {
 		var query = {
 			"url": "http://www.dotabuff.com" + playerMatches,
 			"scope": "td.cell-large",
@@ -55,20 +60,25 @@ function getPlayerMatches(playersMatches) {
 		x(query.url, query.scope, query.selector)(function(err, response) {
 			var matchUrls = response;
 
-			if (!matchUrls) {
-				return;
+			if (matchUrls) {
+				for (var j = 0; j < matchesPerPlayer; j++) {
+					var matchUrl = matchUrls[j];
+					var matchId = matchUrl.split("matches/").pop().trim();
+					fs.appendFileSync("./top-player-match-ids.txt", matchId + "\r\n");
+				}
 			}
 
-			for (var j = 0; j < matchesPerPlayer; j++) {
-				var matchUrl = matchUrls[j];
-				var matchId = matchUrl.split("matches/").pop().trim();
-				fs.appendFileSync("./top-player-match-ids.txt", matchId + "\r\n");
+			i++;
+
+			if (playersMatches[i] && i < playersPerHero) {
+				getPlayerMatch(playersMatches[i]);
 			}
 
 			// console.log('third', response);
 		});
 	}
 
+	getPlayerMatch(playersMatches[i]);
 }
 
 function main() {
